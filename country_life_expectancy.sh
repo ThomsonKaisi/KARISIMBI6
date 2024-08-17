@@ -2,7 +2,7 @@
 country=$1
 life_expectancy_file="life-expectancy.csv"
 
-
+#getting life expectancy
 life_expectancy=$(grep "$country," "$life_expectancy_file" | cut -d "," -f7)
 
 if [ -z "$life_expectancy" ]; then

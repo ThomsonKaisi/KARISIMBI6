@@ -1,4 +1,4 @@
-
+package usermanagement;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -8,13 +8,13 @@ public abstract class User {
     protected String firstName;
     protected String lastName;
     protected String email;
-    protected UserRole role;
+    protected String userRole;
 
-    public User(String firstName, String lastName, String email, UserRole role){
+    public User(String firstName, String lastName, String email, String userRole){
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.role = role;
+        this.userRole = userRole;
     }
 
     public User(){}
@@ -44,17 +44,17 @@ public abstract class User {
         this.email = email;
     }
 
-    public UserRole getUserRole() {
-        return this.role;
+    public String getUserRole() {
+        return userRole;
     }
 
-    public void setUserRole(UserRole userRole) {
-        this.role = userRole;
+    public void setUserRole(String userRole) {
+        this.userRole = userRole;
     }
 
     public boolean checkLoginStatus(){
         try{
-            Process process = Runtime.getRuntime().exec(new String [] {"sh","-c", "./Authentication_Script/check_login.sh " +this.email+ " user-data.csv"});
+            Process process = Runtime.getRuntime().exec(new String [] {"sh","-c", "usermanagement/Authentication_Script/check_login.sh " +this.email+ "usermanagement/user-data.csv"});
             InputStream input = process.getInputStream();
             boolean status = Boolean.parseBoolean(streamData(input));
             return status;

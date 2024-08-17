@@ -1,4 +1,4 @@
-
+package usermanagement;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -38,14 +38,11 @@ public class Patient extends User {
     //Patient Complete Registration
     public boolean registration(String uuid,String firstName, String lastName, LocalDate birthDate, boolean isHiv, boolean isOnART, LocalDate diagnosisDate, LocalDate artStartDate, String country, String encryptedPassword) {
         if (checkRegistrationStatus(uuid)) {
-            String script = "./register.sh " + this.email + " " + firstName + " " + lastName + " " + birthDate + " " + isHiv + " " + isOnART + " " + diagnosisDate + " " + artStartDate + " " + country+" \""+encryptedPassword+"\"";
-
+            String script = "usermanagement/register.sh " + this.email + " " + firstName + " " + lastName + " " + birthDate + " " + isHiv + " " + isOnART + " " + diagnosisDate + " " + artStartDate + " " + country + " " + encryptedPassword + " user-data.csv key.pem user-store.txt";
             try {
                 Process process = Runtime.getRuntime().exec(new String[]{"sh", "-c", script});
                 InputStream input = process.getInputStream();
-                InputStream error =process.getErrorStream();
                 boolean status = Boolean.parseBoolean(streamData(input));
-                calculateLifeExpectancy();
                 return status;
             } catch (Exception e) {
 
@@ -59,13 +56,12 @@ public class Patient extends User {
     }
     //get profile
     public Object[] getProfile(){
-        Object [] dataFields = new Object[9];
+        Object [] dataFields = new Object[8];
         //checking if the user is login
         if(checkLoginStatus()){
         try {
-            Process process = Runtime.getRuntime().exec(new String[]{"sh","-c", "./view_profile.sh " +this.email+ " user-data.csv"});
+            Process process = Runtime.getRuntime().exec(new String[]{"sh","-c", "usermanagement/view_profile.sh " +this.email+ "usermanagement/user-data.csv"});
             InputStream inputStream =process.getInputStream();
-            InputStream error = process.getErrorStream();
             String [] data = streamData(inputStream).split(",");
             for(int i=0;i<=data.length;i++){
                 dataFields[i]=data[i];
@@ -91,9 +87,9 @@ public class Patient extends User {
         }
         return null;
     }
-    public boolean checkRegistrationStatus(String uuid){
+    private boolean checkRegistrationStatus(String uuid){
         try{
-            Process process = Runtime.getRuntime().exec(new String []{"sh","-c", "./check_registration.sh " +this.email+" "+uuid+" user-store.txt"});
+            Process process = Runtime.getRuntime().exec(new String []{"sh","-c", "usermanagement/check_registration.sh " +this.email+" "+uuid+" user-store.txt"});
             InputStream input = process.getInputStream();
             boolean status = Boolean.parseBoolean(streamData(input));
             return status;
@@ -105,7 +101,7 @@ public class Patient extends User {
     //updating profile all
     public boolean updateProfile(String firstName, String lastName, LocalDate birthDate, boolean isHiv, boolean isOnART, LocalDate diagnosisDate, LocalDate artStartDate, String country){
         if(checkLoginStatus()){
-            String script = "./update_profile_all.sh " + this.email + " " + firstName + " " + lastName + " " + birthDate + " " + isHiv + " " + diagnosisDate + " " + isOnART + " " + artStartDate + " " + country;
+            String script = "usermanagement/update_profile_all.sh " + this.email + " " + firstName + " " + lastName + " " + birthDate + " " + isHiv + " " + isOnART + " " + diagnosisDate + " " + artStartDate + " " + country;
             try{
                 Process process = Runtime.getRuntime().exec(new String[]{"sh", "-c", script});
                 InputStream input = process.getInputStream();
@@ -122,66 +118,72 @@ public class Patient extends User {
     }
 
     //updating profile with option
-    public boolean updateProfile(int option, Object data) {
-        if (checkLoginStatus()) {
+    public boolean updateProfile(int option,Object data){
+
+        if (checkLoginStatus()){
             InputStream input;
             boolean status;
+            switch (option){
+                case 1:
+                    String firstname = (String) data;
+                    input = sendData("ProfileManagement/update_profile_firstname.sh " +this.email+" "+firstname).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    return status;
+                case 2:
+                    String lastname = (String) data;
+                    input = sendData("ProfileManagement/update_profile_lastname.sh " +this.email+" "+lastname).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    return status;
 
-            if (option == 1) {
-                String firstname = (String) data;
-                input = sendData("ProfileManagement/update_profile_firstname.sh " + this.email + " " + firstname).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                return status;
-            } else if (option == 2) {
-                String lastname = (String) data;
-                input = sendData("ProfileManagement/update_profile_lastname.sh " + this.email + " " + lastname).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                return status;
-            } else if (option == 3) {
-                LocalDate birthDate = (LocalDate) data;
-                input = sendData("ProfileManagement/update_profile_birthdate.sh " + this.email + " " + birthDate).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                calculateLifeExpectancy();
-                return status;
-            } else if (option == 4) {
-                boolean isHiv = (boolean) data;
-                input = sendData("ProfileManagement/update_profile_isHIV.sh " + this.email + " " + isHiv).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                calculateLifeExpectancy();
-                return status;
-            } else if (option == 5) {
-                boolean isOnART = (boolean) data;
-                input = sendData("ProfileManagement/update_profile_isOnART.sh " + this.email + " " + isOnART).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                calculateLifeExpectancy();
-                return status;
-            } else if (option == 6) {
-                LocalDate diagnosisDate = (LocalDate) data;
-                String diagnosisDate2 = String.valueOf(diagnosisDate);
-                input = sendData("ProfileManagement/update_profile_diagnosisDate.sh " + this.email + " " + diagnosisDate2).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                calculateLifeExpectancy();
-                return status;
-            } else if (option == 7) {
-                LocalDate artStartDate = (LocalDate) data;
-                input = sendData("ProfileManagement/update_profile_artStartDate.sh " + this.email + " " + artStartDate).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                calculateLifeExpectancy();
-                return status;
-            } else if (option == 8) {
-                String country = (String) data;
-                input = sendData("ProfileManagement/update_profile_country.sh " + this.email + " " + country).getInputStream();
-                status = Boolean.parseBoolean(streamData(input));
-                calculateLifeExpectancy();
-                return status;
-            } else {
-                return false;
+                case 3:
+                    LocalDate birthDate = (LocalDate) data;
+                    input = sendData("ProfileManagement/update_profile_birthdate.sh " +this.email+" "+birthDate).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    calculateLifeExpectancy();
+                    return status;
+                case 4:
+                    boolean isHiv = (boolean) data;
+                    input = sendData("ProfileManagement/update_profile_isHIV.sh " +this.email+" "+isHiv).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    calculateLifeExpectancy();
+                    return status;
+
+                case 5:
+                    boolean isOnART = (boolean) data;
+                    input = sendData("ProfileManagement/update_profile_isOnART.sh " +this.email+" "+isOnART).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    calculateLifeExpectancy();
+                    return status;
+
+                case 6:
+                    LocalDate diagnosisDate = (LocalDate) data;
+                    input = sendData("ProfileManagement/update_profile_diagnosisDate.sh " +this.email+" "+diagnosisDate).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    calculateLifeExpectancy();
+                    return status;
+                case 7:
+
+                    LocalDate artStartDate = (LocalDate) data;
+                    input = sendData("ProfileManagement/update_profile_artStartDate.sh " +this.email+" "+artStartDate).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    calculateLifeExpectancy();
+                    return status;
+
+                case 8:
+                    String country = (String) data;
+                    input = sendData("ProfileManagement/update_profile_country.sh " +this.email+" "+country).getInputStream();
+                    status = Boolean.parseBoolean(streamData(input));
+                    calculateLifeExpectancy();
+                    return status;
+                default:
+                    return false;
+
             }
-        } else {
-            return false;
+
+        }else {
+           return false;
         }
     }
-
     //sending data to a process
     private Process sendData(String script){
         Process process= null;
@@ -198,11 +200,13 @@ public class Patient extends User {
 
     public double calculateLifeExpectancy(){
         Object [] profile =getProfile();
+        System.out.println(profile[7]);
         if(profile != null){
             LocalDate date_of_birth= LocalDate.parse((String)profile[2]) ;
             boolean hiv = Boolean.parseBoolean((String)profile[3]);
+            LocalDate date_of_diagnosis = LocalDate.parse((String)profile[4]);
             boolean art = Boolean.parseBoolean((String)profile[5]);
-
+            LocalDate art_start_date = LocalDate.parse((String)profile[6]);
             String country = (String) profile[7];
             //calculating age of a person
             Period period = Period.between(date_of_birth,LocalDate.now());
@@ -213,9 +217,7 @@ public class Patient extends User {
             //checking if is hiv positive
             if(hiv){
                 //calculating life expectancy
-                LocalDate date_of_diagnosis = LocalDate.parse((String)profile[4]);
                 if(art){
-                    LocalDate art_start_date = LocalDate.parse((String)profile[6]);
                     //Calculate difference in years between ART startdate and dignosisdate
                     Period period2 = Period.between(date_of_diagnosis,art_start_date);
                     years=(double) period2.getYears()+1;
@@ -224,26 +226,16 @@ public class Patient extends User {
                     double fraction =Math.pow(0.9,years);
                     double time_difference = life_expectancy-age;
                     double patient_life_expectancy = fraction*time_difference;
-                    sendData("update_life.sh "+this.email+" "+patient_life_expectancy);
+                    sendData("usermanagement/update_life_expectancy.sh " +this.email+" "+patient_life_expectancy);
                     return patient_life_expectancy;
 
                 }else{
                     Period period3 = Period.between(date_of_diagnosis,LocalDate.now());
-                    int life = 5-period3.getYears();
-                    if(life>0){
-                        sendData("update_life.sh "+this.email+" "+life);
-                        return life;
-                    }else {
-                        sendData("update_life.sh "+this.email+" 0");
-                        return 0;
-                    }
-
+                    return 5-period3.getYears();
                 }
             }else {
-                //retur country's life expectancy - age
-                double year2 = life_expectancy-age;
-                sendData("update_life.sh "+this.email+" "+year2);
-                return year2;
+                //return country's life expectancy - age
+                return life_expectancy-age;
             }
         }
 
@@ -251,7 +243,7 @@ return 0.0;
 
     }
     private double getLifeExpectancy(String country){
-        Process process = sendData("./country_life_expectancy.sh " +country);
+        Process process = sendData("usermanagement/country_life_expectancy.sh " +country);
         InputStream input = process.getInputStream();
         String response = streamData(input);
         if(response !=null) {

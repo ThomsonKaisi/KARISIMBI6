@@ -21,10 +21,9 @@ else
     hashed_string=$(echo -n "$decrypted_password" | sha256sum | awk '{print $1}')
     result=$(grep "$email," "$user_data" | cut -d "," -f2)
 
-
-    if [ "$hashed_string" = "$result" ]; then
+    if [ "$hashed_string" == "$result" ]; then
         echo "true"
     else
-        echo "$result"
+        echo "false"
     fi
 fi

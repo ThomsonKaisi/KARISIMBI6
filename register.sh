@@ -11,11 +11,11 @@ diagnosisDate=$7
 artStartDate=$8
 country=$9
 encryptedPassword=${10}
-file="user-data.csv"
-user_data="user-store.txt"
+file=${11}
+user_data=${13}
 
 #  private key file
-PRIVATE_KEY_FILE="key.pem"
+PRIVATE_KEY_FILE=${12}
 temp_file=$(mktemp)
 user_store="user-store.txt"
 
@@ -25,6 +25,7 @@ echo "$encryptedPassword" | base64 -d > encrypted_password.bin
 
 # Decrypt the password
 decrypted_password=$(openssl pkeyutl -decrypt -inkey "$PRIVATE_KEY_FILE" -in encrypted_password.bin 2>/dev/null)
+
 # Check if the decryption was successful
 if [ -z "$decrypted_password" ]; then
     echo 'false'
@@ -39,7 +40,7 @@ echo "$email,$hashedPassword,$login_status,$firstName,$lastName,$birthDate,$isHi
 email_check=$(grep "$email," "$file" | cut -d "," -f1)
 
 if [ -z "$email_check" ]; then
-  echo "true"
+  echo "false"
 else
   grep -v "^$email," "$user_store" > "$temp_file"
   mv "$temp_file" "$user_store"
